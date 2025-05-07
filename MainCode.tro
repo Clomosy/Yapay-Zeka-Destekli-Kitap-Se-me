@@ -1,0 +1,396 @@
+var
+  MainForm:TclForm;
+  SurveyContainerPnl,MainContainerPnl,ResultContainerPnl : TclProPanel;
+  CaptionLbl, QuestionCountLbl, QuestionCptLbl, QuestionLbl : TclProLabel;
+  RadioGroup1:TClRadioGroup;
+  QuestionLyt,BttmLyt : TclLayout;
+  StartBtn, BackBtn, NextBtn, BackMainPageBtn : TClProButton;
+  Memo1 : TclMemo;
+  
+  QuestionArr, YasCvpArr, AnaTurCvpArr,YayinCvpArr,FormatCvpArr, PopulerlikCvpArr, UzunlukCvpArr, AltTurCvpArr, AnswerArr;
+  I : Integer;
+  questionCount : Integer;
+  
+  
+  Rest: TclRest;
+  API_KEY: string;
+  RequestBody: string;
+
+void OnRadioButtonClick;
+var
+  SelectedIndex: Integer;
+  SelectedText: String;
+{
+  SelectedIndex = RadioGroup1.ItemIndex;
+  SelectedText = RadioGroup1.Items[SelectedIndex];
+  
+  AnswerArr[questionCount,1] = SelectedText;
+}
+
+void LoadRadioGroupOptions;
+{
+
+  if (questionCount == 0) //Yaş Seçimi sorusu
+  {
+    QuestionCountLbl.Text = '1/7';
+    QuestionLbl.Text = QuestionArr[questionCount];
+    for (I = 0 to High(YasCvpArr))
+      RadioGroup1.Items.Add(YasCvpArr[I]);
+  } else if(questionCount == 1) //Ana Tür Seçimi sorusu
+  {
+    QuestionCountLbl.Text = '2/7';
+    QuestionLbl.Text = QuestionArr[questionCount];
+    for (I = 0 to High(AnaTurCvpArr))
+      RadioGroup1.Items.Add(AnaTurCvpArr[I]);
+  } else if(questionCount == 2) //Alt Tür Seçim sorusu
+  {
+    QuestionCountLbl.Text = '3/7';
+    QuestionLbl.Text = QuestionArr[questionCount];
+    for (I = 0 to High(AltTurCvpArr))
+      RadioGroup1.Items.Add(AltTurCvpArr[I]);
+  } else if(questionCount == 3) //Yayın Tarihi sorusu
+  {
+    QuestionCountLbl.Text = '4/7';
+    QuestionLbl.Text = QuestionArr[questionCount];
+    for (I = 0 to High(YayinCvpArr))
+      RadioGroup1.Items.Add(YayinCvpArr[I]);
+  } else if(questionCount == 4) //Format sorusu
+  {
+    QuestionCountLbl.Text = '5/7';
+    QuestionLbl.Text = QuestionArr[questionCount];
+    for (I = 0 to High(FormatCvpArr))
+      RadioGroup1.Items.Add(FormatCvpArr[I]);
+  } else if(questionCount == 5) //Uzunluk sorusu
+  {
+    QuestionCountLbl.Text = '6/7';
+    QuestionLbl.Text = QuestionArr[questionCount];
+    for (I = 0 to High(UzunlukCvpArr))
+      RadioGroup1.Items.Add(UzunlukCvpArr[I]);
+  } else if(questionCount == 6) //Popülerlik ve İncelemeler sorusu
+  {
+    QuestionCountLbl.Text = '7/7';
+    QuestionLbl.Text = QuestionArr[questionCount];
+    for (I = 0 to High(PopulerlikCvpArr))
+      RadioGroup1.Items.Add(PopulerlikCvpArr[I]);
+  }
+}
+
+void ACompletedProc;
+var
+  strIncomingData : String;
+{
+  QuestionCountLbl.Visible = False;
+  QuestionCountLbl.Text = '1/7';
+  SurveyContainerPnl.Visible = False;
+  ResultContainerPnl.Visible = True;
+  try
+    strIncomingData = Clomosy.CLParseJSON(Rest.Response,'candidates.0.content.parts.0.text');
+    Memo1.Lines.Add(strIncomingData);
+  except
+    ShowMessage('Gelen veri işlenirken bir hata oluştu. Hata: : '+LastExceptionMessage+' Lütfen internet bağlantınızı ve sunucu yanıtını kontrol edin.');
+  }
+}
+
+void RestCreate(ABaseUrl, ABody :String);
+{
+  try
+  Rest = TclRest.Create;
+  Rest.Accept = 'application/json';
+  Rest.ContentType = 'application/json'; 
+  Rest.Method = rmPOST;
+  Rest.ConnectTimeOut = 30000;
+  Rest.BaseURL = ABaseUrl; //'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + API_KEY
+  Rest.Body = ABody;
+  Rest.OnCompleted = 'ACompletedProc';
+  Rest.ExecuteAsync;
+
+  except
+    ShowMessage('Sunucuya bağlanırken bir hata oluştu. Hata : '+LastExceptionMessage +' Lütfen daha sonra tekrar deneyiniz.');
+  }
+  
+}
+
+void OnExamFinished;
+var
+  soru : String;
+{
+  soru = AnswerArr[0,1] +' yaş grubuna uygun ' + AnswerArr[1,1] + ' türünde, ' + AnswerArr[2,1] + ' temalarına sahip, ' + AnswerArr[3,1] + ' ait klasiklerden, ' + AnswerArr[4,1] + ' formatında, ' + AnswerArr[5,1] + ' uzunlukta ve '+ AnswerArr[6,1]+' arasında yer alan birden fazla kitap önerir misin? Lütfen sadece kitabın adını ve yazarını şu formatta yaz: Kitap İsmi – Yazar. Gerçek bir kitap değilse “bulamadım” yaz.';
+  
+  try
+    API_KEY = 'yourToken';  //  Kendi API anahtarınızı buraya girin.
+      
+      RequestBody = '{
+      "contents": [
+        {
+          "parts": [
+            {
+              "text": "'+soru+'"
+            }
+          ]
+        }
+      ]
+    }';
+    RestCreate('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + API_KEY,RequestBody);
+  
+  except
+    ShowMessage('Veri hazırlanırken bir hata oluştu. Soru içeriğini kontrol edin. Hata: '+LastExceptionMessage);
+  }
+}
+void motionControl;
+var
+  SelectedIndex: Integer;
+  clickedBtn:TClProButton;
+  J : Integer;
+{
+  clickedBtn = TClProButton(MainForm.Clsender); 
+  SelectedIndex = RadioGroup1.ItemIndex;
+  if (clickedBtn.clTagStr == 'ok') //Soruların hepsinin bitip bitmediği kontrol edilir.
+  {
+    OnExamFinished;
+    
+  } 
+  else
+  {
+    if (clickedBtn.clTagInt == 0) //Geri butonu tıklandı
+    {
+      questionCount = questionCount -1;
+      NextBtn.Text = 'Sonraki >';
+      NextBtn.clTagStr = '--';
+      if(questionCount == -1)
+      {
+        ShowMessage('İlk sorudasınız.');
+        questionCount = 0;
+      }
+      else
+      {
+        RadioGroup1.Items.Clear;
+        LoadRadioGroupOptions;
+      }
+      RadioGroup1.ItemIndex = RadioGroup1.Items.IndexOf(AnswerArr[questionCount,1]);
+    } else //İleri butonu tıklandı
+    {
+      if (SelectedIndex == -1)
+        ShowMessage('Bir seçenek seçiniz.');
+      else
+      {
+        questionCount = questionCount +1;
+        if(questionCount == 7)
+        {
+          ShowMessage('Sonuçları görmek için ''GÖNDER'' butonuna basınız.');
+          questionCount = 6;
+          NextBtn.Text = 'GÖNDER';
+          NextBtn.clTagStr = 'ok';
+        }else
+        {
+          RadioGroup1.Items.Clear;
+          LoadRadioGroupOptions;
+        }
+        RadioGroup1.ItemIndex = RadioGroup1.Items.IndexOf(AnswerArr[questionCount,1]);
+      }
+    }
+  }
+}
+void OnBackMainPage;
+{ 
+  RadioGroup1.Items.Clear;
+  NextBtn.Text = 'Sonraki >';
+  NextBtn.clTagStr = '--';
+  ResultContainerPnl.Visible = False;
+  Memo1.Lines.Clear;
+  MainContainerPnl.Visible = True;
+  
+  
+}
+
+void OnStartBtnClick;
+{
+  AnswerArr = [['Yaş  Seçimi',''], ['Ana Tür Seçimi',''], ['Alt Tür Seçimi',''], ['Yayın Tarihi',''], ['Format',''],['Uzunluk',''],['Popülerlik ve İncelemeler','']]; 
+  MainContainerPnl.Visible = False;
+  questionCount = 0; //İleri geri butonuna her basıldığında değiştirilecek değişken 0:Yaş sorusuyla başlıyor.
+  SurveyContainerPnl.Visible = True;
+  QuestionCountLbl.Visible = True;
+  LoadRadioGroupOptions;
+}
+
+void SetMainContainer;
+{
+  MainContainerPnl=MainForm.AddNewProPanel(MainForm,'MainContainerPnl');
+  MainContainerPnl.Align = alClient;
+  MainContainerPnl.Margins.Top = 10;
+  MainContainerPnl.Margins.Left = 10;
+  MainContainerPnl.Margins.Right = 10;
+  MainContainerPnl.Margins.Bottom = 10;
+  
+  CaptionLbl = MainForm.AddNewProLabel(MainContainerPnl,'CaptionLbl','Yapay Zeka Destekli Kitap Seçme');
+  CaptionLbl.Align = AlTop;
+  CaptionLbl.Margins.Top = MainContainerPnl.Height/6;
+  CaptionLbl.Height = 100;
+  CaptionLbl.clProSettings.Autosize = True;
+  CaptionLbl.clProSettings.FontColor = clAlphaColor.clHexToColor('#222625');
+  CaptionLbl.clProSettings.FontSize = 20;
+  CaptionLbl.clProSettings.FontVertAlign = palcenter;
+  CaptionLbl.clProSettings.FontHorzAlign = palCenter;
+  CaptionLbl.clProSettings.TextSettings.Font.Style = [fsBold];
+  CaptionLbl.clProSettings.IsFill = True; 
+  CaptionLbl.clProSettings.IsRound = True;
+  CaptionLbl.SetclProSettings(CaptionLbl.clProSettings);
+  
+  StartBtn = MainForm.AddNewProButton(MainContainerPnl,'StartBtn','BAŞLA');
+  StartBtn.Align = AlBottom;
+  StartBtn.Height = 50;
+  StartBtn.Margins.Left = MainContainerPnl.Width / 4;
+  StartBtn.Margins.Right = MainContainerPnl.Width / 4;
+  StartBtn.Margins.Bottom = MainContainerPnl.Height /6;
+  StartBtn.clProSettings.FontColor = clAlphaColor.clHexToColor('#ffffff');
+  StartBtn.clProSettings.FontSize = 14;
+  StartBtn.clProSettings.FontVertAlign = palcenter;
+  StartBtn.clProSettings.FontHorzAlign = palCenter;
+  StartBtn.clProSettings.TextSettings.Font.Style = [fsBold];
+  StartBtn.clProSettings.BackgroundColor = clAlphaColor.clHexToColor('#3cb187');
+  StartBtn.clProSettings.RoundHeight = 20;
+  StartBtn.clProSettings.RoundWidth  = 20;
+  StartBtn.clProSettings.IsFill = True; 
+  StartBtn.clProSettings.IsRound = True;
+  StartBtn.SetclProSettings(StartBtn.clProSettings);
+  MainForm.AddNewEvent(StartBtn,tbeOnClick,'OnStartBtnClick');
+  
+}
+
+void SetSurveyContainer;
+{
+  QuestionCountLbl = MainForm.AddNewProLabel(MainForm.LytTopBar,'QuestionCountLbl','1/7');
+  QuestionCountLbl.Align = AlRight;
+  QuestionCountLbl.Margins.Top = 10;
+  QuestionCountLbl.Margins.Right = 10;
+  QuestionCountLbl.Width = MainForm.LytTopBar.Width /4;
+  QuestionCountLbl.Visible = False;
+  QuestionCountLbl.clProSettings.FontColor = clAlphaColor.clHexToColor('#222625');
+  QuestionCountLbl.clProSettings.FontSize = 14;
+  QuestionCountLbl.clProSettings.FontVertAlign = palCenter;
+  QuestionCountLbl.clProSettings.FontHorzAlign = palCenter;
+  QuestionCountLbl.clProSettings.TextSettings.Font.Style = [fsBold];
+  QuestionCountLbl.clProSettings.BackgroundColor = clAlphaColor.clHexToColor('#f8fdfb');
+  QuestionCountLbl.clProSettings.IsFill = True; 
+  QuestionCountLbl.clProSettings.RoundHeight = 10;
+  QuestionCountLbl.clProSettings.RoundWidth = 10;
+  QuestionCountLbl.clProSettings.IsRound = True;
+  QuestionCountLbl.SetclProSettings(QuestionCountLbl.clProSettings);
+  
+  SurveyContainerPnl=MainForm.AddNewProPanel(MainForm,'SurveyContainerPnl');
+  SurveyContainerPnl.Align = alClient;
+  SurveyContainerPnl.Margins.Top = 10;
+  SurveyContainerPnl.Margins.Left = 10;
+  SurveyContainerPnl.Margins.Right = 10;
+  SurveyContainerPnl.Margins.Bottom = 10;
+  SurveyContainerPnl.Visible = False;
+
+  QuestionLyt = MainForm.AddNewLayout(SurveyContainerPnl,'QuestionLyt');
+  QuestionLyt.Align=ALMostTop;
+  QuestionLyt.Height = SurveyContainerPnl.Height / 8;
+  QuestionLyt.Margins.Top = 10;
+  QuestionLyt.Margins.Left = 5;
+  QuestionLyt.Margins.Right = 5;
+   
+  QuestionCptLbl = MainForm.AddNewProLabel(QuestionLyt,'QuestionCptLbl','SORU: ');
+  QuestionCptLbl.Align = AlLeft;
+  QuestionCptLbl.Width = QuestionLyt.Width /4;
+  QuestionCptLbl.clProSettings.FontColor = clAlphaColor.clHexToColor('#222625');
+  QuestionCptLbl.clProSettings.FontSize = 14;
+  QuestionCptLbl.clProSettings.FontVertAlign = palcenter;
+  QuestionCptLbl.clProSettings.FontHorzAlign = palCenter;
+  QuestionCptLbl.clProSettings.TextSettings.Font.Style = [fsBold];
+  QuestionCptLbl.clProSettings.IsFill = True; 
+  QuestionCptLbl.clProSettings.IsRound = True;
+  QuestionCptLbl.SetclProSettings(QuestionCptLbl.clProSettings);
+  
+  QuestionLbl = MainForm.AddNewProLabel(QuestionLyt,'QuestionLbl','Soru İçeriği Bekleniyor...');
+  QuestionLbl.Align = AlClient;
+  QuestionLbl.SetclProSettings(QuestionCptLbl.clProSettings);
+
+  RadioGroup1 = MainForm.AddNewRadioGroup(SurveyContainerPnl,'RadioGroup1','-');  
+  RadioGroup1.Align = alClient;
+  RadioGroup1.Margins.Left = 5;
+  RadioGroup1.Margins.Right = 5;
+  RadioGroup1.Title.Text = 'Seçeneklerden birini işaretleyiniz. (Zorunlu)'; 
+  MainForm.AddNewEvent(RadioGroup1, tbeOnClick, 'OnRadioButtonClick');
+
+//--------------------------------------------------------------------------
+  BttmLyt = MainForm.AddNewLayout(SurveyContainerPnl,'BttmLyt');
+  BttmLyt.Align=ALMostBottom;
+  BttmLyt.Height = SurveyContainerPnl.Height / 10;
+  BttmLyt.Margins.Top = 10;
+  BttmLyt.Margins.Bottom = 10;
+  BttmLyt.Margins.Left = 5;
+  BttmLyt.Margins.Right = 5;
+
+  BackBtn = MainForm.AddNewProButton(BttmLyt,'BackBtn','< Geri');
+  BackBtn.Align = alLeft;
+  BackBtn.Width = BttmLyt.Width / 3;
+  BackBtn.Margins.Left = 10;
+  BackBtn.clTagInt = 0;
+  BackBtn.SetclProSettings(StartBtn.clProSettings);
+  MainForm.AddNewEvent(BackBtn,tbeOnClick,'motionControl');
+
+
+  NextBtn = MainForm.AddNewProButton(BttmLyt,'NextBtn','Sonraki >');
+  NextBtn.Align = alRight;
+  NextBtn.Width = BttmLyt.Width / 3;
+  NextBtn.Margins.Right = 10;
+  NextBtn.clTagInt = 1;
+  NextBtn.SetclProSettings(StartBtn.clProSettings);
+  MainForm.AddNewEvent(NextBtn,tbeOnClick,'motionControl');
+}
+
+void SetResultContainer;
+{
+  ResultContainerPnl=MainForm.AddNewProPanel(MainForm,'ResultContainerPnl');
+  ResultContainerPnl.Align = alClient;
+  ResultContainerPnl.Margins.Top = 10;
+  ResultContainerPnl.Margins.Left = 10;
+  ResultContainerPnl.Margins.Right = 10;
+  ResultContainerPnl.Margins.Bottom = 10;
+  ResultContainerPnl.Visible = False;
+  
+  Memo1 = MainForm.AddNewMemo(ResultContainerPnl,'Memo1','');
+  Memo1.Align = AlBottom;
+  Memo1.Margins.Left = 20;
+  Memo1.Margins.Right = 20;
+  Memo1.Margins.Bottom = 20;
+  Memo1.Height = ResultContainerPnl.Height - 150;
+  Memo1.WordWrap = True; 
+  Memo1.ReadOnly = True;
+
+  BackMainPageBtn = MainForm.AddNewProButton(ResultContainerPnl,'BackMainPageBtn','ANA SAYFA');
+  BackMainPageBtn.Align = AlMostBottom;
+  BackMainPageBtn.Height = 50;
+  BackMainPageBtn.Margins.Left = ResultContainerPnl.Width / 4;
+  BackMainPageBtn.Margins.Right = ResultContainerPnl.Width / 4;
+  BackMainPageBtn.Margins.Bottom = 20;
+  BackMainPageBtn.SetclProSettings(StartBtn.clProSettings);
+  MainForm.AddNewEvent(BackMainPageBtn,tbeOnClick,'OnBackMainPage');
+}
+
+{ 
+  QuestionArr = ['Yaş Seçimi','Ana Tür Seçimi','Alt Tür Seçimi','Yayın Tarihi', 'Format','Uzunluk','Popülerlik ve İncelemeler'];
+  YasCvpArr = ['5-6','7-8','9-10','11-12','13-14','15-16','17+'];
+  AnaTurCvpArr = ['Kurgu (Roman, Hikaye vb.)','Kurgu Dışı (Biyografi, Bilimsel, Eğitim vb.)'];
+  AltTurCvpArr = ['Polisiye / Dedektiflik','Bilim Kurgu','Aşk / Romantik','Tarih / Tarihi Roman','Fantastik / Macera','Eğitim / Öğretici','Psikoloji','Felsefi / Düşünsel','Bilim ve Keşif','Doğa ve Hayvan','Toplum ve Eleştiri','Mitoloji / Efsane','Gezi / Seyahat','Teknoloji'];
+  YayinCvpArr = ['Eski Klasikler(1800''ler öncesi)','Modern Klasikler (1800-2000)','Yeni Çıkanlar (2000 ve sonrası)'];
+  FormatCvpArr = ['Roman','Kısa Hikaye','Çizgi Roman','Bilimsel/Eğitimsel','Biyografi/Otobiyografi'];
+  UzunlukCvpArr = ['Kısa (0-100 sayfa)','Orta (100-250 sayfa)','Uzun (250+ sayfa)'];
+  PopulerlikCvpArr = ['En Çok Satanlar','Ödüllü Kitaplar','İyi Eleştiriler','100 Temel Eserler','Dünya Klasikleri'];
+  
+  AnswerArr = VarArrayCreate([0, 6, 0, 1], 12);              
+  
+  MainForm = TclForm.Create(Self);
+  MainForm.SetFormBGImage('https://clomosy.com/theme/SurveyStyle5.png');
+  MainForm.BtnFormMenu.Visible = False;
+  MainForm.FormWaiting.Visible = False;
+  
+  SetMainContainer;
+  SetSurveyContainer;
+  SetResultContainer;
+  
+
+  MainForm.Run;
+}
