@@ -21,6 +21,10 @@ Yaş, kitap türü ve okuma formatı gibi kriterleri göz önünde bulundurarak 
 3. Son soruya kadar bu adımları tekrarlayın.
 4. Anket tamamlandığında sistem size en uygun kitap önerilerini otomatik olarak getirir.
 
+## Not: 
+
+Uygulamayı kullanabilmek için Gemini platformu üzerinden bir hesap oluşturmalı ve bir API anahtarı (token) almalısınız. Ardından, kod içinde **yourToken** yazan yeri kendi token bilginizle değiştirmeyi unutmayınız.
+
 ![Ana Sayfa Ekranı](AnaSayfa.png)
 ![Anket Ekranı](Anket.png)
 ![Sonuç Ekranı](Sonuc.png)
