@@ -1,1 +1,1 @@
-# Yapay-Zeka-Destekli-Kitap-Se-me
+# Yapay-Zeka-Destekli-Kitap-Secme
